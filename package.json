@@ -4,10 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build && next export",
+    "build": "next build",
+    "build:github": "GITHUB_ACTIONS=true next build",
     "start": "next start",
     "lint": "eslint",
-    "predeploy": "npm run build",
+    "predeploy": "npm run build:github",
     "deploy": "gh-pages -d out"
   },
   "dependencies": {

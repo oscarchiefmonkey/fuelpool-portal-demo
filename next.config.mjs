@@ -6,11 +6,9 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Använd basePath och assetPrefix endast för GitHub Pages deployment
-  ...(isGithubPages && {
-    basePath: '/fuelpool-portal-demo',
-    assetPrefix: '/fuelpool-portal-demo/',
-  }),
+  // Använd basePath och assetPrefix för GitHub Pages deployment
+  basePath: isGithubPages ? '/fuelpool-portal-demo' : '',
+  assetPrefix: isGithubPages ? '/fuelpool-portal-demo/' : '',
 };
 
 export default nextConfig;

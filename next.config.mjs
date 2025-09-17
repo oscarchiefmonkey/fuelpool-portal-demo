@@ -1,15 +1,12 @@
-const isDev = process.env.NODE_ENV === 'development';
-
 const nextConfig = {
-  output: 'export',
+  // Ta bort output: 'export' för Vercel
+  // output: 'export', // Kommenterad ut för Vercel
   images: {
-    unoptimized: true,
+    unoptimized: false, // Vercel kan optimera bilder
   },
-  // Använd basePath och assetPrefix endast för production (GitHub Pages)
-  ...(isDev ? {} : {
-    basePath: '/fuelpool-portal-demo',
-    assetPrefix: '/fuelpool-portal-demo/',
-  }),
+  // Ta bort basePath och assetPrefix för Vercel
+  // basePath: '/fuelpool-portal-demo',
+  // assetPrefix: '/fuelpool-portal-demo/',
 };
 
 export default nextConfig;

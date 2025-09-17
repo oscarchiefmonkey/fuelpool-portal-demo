@@ -5,11 +5,8 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
-    "build:github": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "predeploy": "npm run build:github",
-    "deploy": "gh-pages -d out"
+    "lint": "eslint"
   },
   "dependencies": {
     "next": "15.5.0",

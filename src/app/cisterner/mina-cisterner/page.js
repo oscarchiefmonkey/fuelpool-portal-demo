@@ -1,10 +1,8 @@
 'use client';
 
 import Layout from '../../../components/Layout';
-import AuthGuard from '../../../components/AuthGuard';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getTanks } from '../../../utils/tankStorage';
 
 export default function MinaCisterner() {
   const [hoveredRow, setHoveredRow] = useState(null);
@@ -15,12 +13,78 @@ export default function MinaCisterner() {
   const [tankData, setTankData] = useState([]);
   const [openActionsMenu, setOpenActionsMenu] = useState(null);
   const [menuStyle, setMenuStyle] = useState({});
+  const [progressDataCache, setProgressDataCache] = useState({});
   const router = useRouter();
 
   // Load tanks from localStorage on component mount
   useEffect(() => {
-    const tanks = getTanks();
-    setTankData(tanks);
+    if (typeof window !== 'undefined') {
+      try {
+        let tanks = JSON.parse(localStorage.getItem('tankData') || '[]');
+        
+        // Lägg till exempel-cisterner om det inte finns några
+        if (tanks.length === 0) {
+          const exampleTanks = [
+            {
+              id: '#1234567',
+              namn: 'Cistern 1234567',
+              volym: '5000',
+              totalVolym: '5000', // Samma som volym
+              produkt: 'Diesel',
+              registreringsdatum: '2019-05-22',
+              modell: 'X2921-221911',
+              serienummer: 'CI3939494-2223-111-2',
+              senasteBesiktning: '2024-11-12',
+              kommentar: 'Fungerar bra',
+              status: 'Online',
+              tillverkare: 'MPP',
+              agare: 'Johnnys Gräv',
+              senasteService: '2024-11-12',
+              senastUppdaterad: new Date().toLocaleString('sv-SE', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              }).replace(',', ' |'),
+              createdAt: new Date().toISOString()
+            },
+            {
+              id: '#2345678',
+              namn: 'Cistern 2345678',
+              volym: '3000',
+              totalVolym: '3000', // Samma som volym
+              produkt: 'Bensin',
+              registreringsdatum: '2020-03-15',
+              modell: 'X2921-221912',
+              serienummer: 'CI3939494-2223-111-3',
+              senasteBesiktning: '2024-10-20',
+              kommentar: 'Behöver service',
+              status: 'Offline',
+              tillverkare: 'MPP',
+              agare: 'Johnnys Gräv',
+              senasteService: '2024-10-20',
+              senastUppdaterad: new Date().toLocaleString('sv-SE', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              }).replace(',', ' |'),
+              createdAt: new Date().toISOString()
+            }
+          ];
+          
+          tanks = exampleTanks;
+          localStorage.setItem('tankData', JSON.stringify(tanks));
+        }
+        
+        setTankData(tanks);
+      } catch (error) {
+        console.error('Error loading tanks:', error);
+        setTankData([]);
+      }
+    }
   }, []);
 
   // Close actions menu when clicking outside
@@ -42,7 +106,7 @@ export default function MinaCisterner() {
 
   // Filter tanks based on search term and filter type
   const filteredTanks = tankData.filter(tank => {
-    const matchesSearch = tank.namn.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (tank.namn || '').toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesFilter = filterType === 'alla' || 
                          (filterType === 'offline' && tank.status === 'Offline') ||
@@ -96,10 +160,46 @@ export default function MinaCisterner() {
     router.push('/cisterner/skapa-cistern');
   };
 
+  // Funktion för att beräkna progress och färg (bara en gång per tank)
+  const getProgressData = (tank) => {
+    // Kolla om vi redan har genererat progress för denna tank
+    if (progressDataCache[tank.id]) {
+      return progressDataCache[tank.id];
+    }
+    
+    // Generera ny progress med Math.random() (bara första gången)
+    const progressValues = [10, 30, 80];
+    const progress = progressValues[Math.floor(Math.random() * progressValues.length)];
+    
+    let progressData;
+    if (progress === 80) {
+      progressData = { progress, color: 'green', bgColor: 'bg-green-400', textColor: 'text-green-500' };
+    } else if (progress === 30) {
+      progressData = { progress, color: 'yellow', bgColor: 'bg-yellow-200', textColor: 'text-yellow-300' };
+    } else { // progress === 10
+      progressData = { progress, color: 'red', bgColor: 'bg-red-600', textColor: 'text-red-600' };
+    }
+    
+    // Spara i cache så den inte ändras igen
+    setProgressDataCache(prev => ({
+      ...prev,
+      [tank.id]: progressData
+    }));
+    
+    return progressData;
+  };
+
   // Function to refresh tank data (useful when returning from create form)
   const refreshTankData = () => {
-    const tanks = getTanks();
-    setTankData(tanks);
+    if (typeof window !== 'undefined') {
+      try {
+        const tanks = JSON.parse(localStorage.getItem('tankData') || '[]');
+        setTankData(tanks);
+      } catch (error) {
+        console.error('Error refreshing tanks:', error);
+        setTankData([]);
+      }
+    }
   };
 
   // Refresh data when component becomes visible (e.g., when returning from create form)
@@ -115,8 +215,7 @@ export default function MinaCisterner() {
   }, []);
 
   return (
-    <AuthGuard>
-      <Layout>
+    <Layout>
       <div className="">
         <div className="mx-auto">
           {/* Breadcrumbs */}
@@ -313,22 +412,22 @@ export default function MinaCisterner() {
                       <div className="text-gray-500 text-xs font-semibold font-inter uppercase leading-none">NAMN</div>
                     </th>
                     <th className="p-2 sm:p-4 border-b border-gray-200 border-t-0 text-left">
+                      <div className="text-gray-500 text-xs font-semibold font-inter uppercase leading-none">STATUS</div>
+                    </th>
+                    <th className="p-2 sm:p-4 border-b border-gray-200 border-t-0 text-left">
+                      <div className="text-gray-500 text-xs font-semibold font-inter uppercase leading-none">PRODUKT</div>
+                    </th>
+                    <th className="p-2 sm:p-4 border-b border-gray-200 border-t-0 text-left">
+                      <div className="text-gray-500 text-xs font-semibold font-inter uppercase leading-none">VOLYM (L)</div>
+                    </th>
+                    <th className="p-2 sm:p-4 border-b border-gray-200 border-t-0 text-left">
                       <div className="flex items-center gap-1">
                         <div className="text-gray-500 text-xs font-semibold font-inter uppercase leading-none">SENAST UPPDATERAD</div>
                         <img src="/chevron-sort.svg" className="w-3 h-3 text-gray-400 hidden sm:block" alt="Sort" />
                       </div>
                     </th>
                     <th className="p-2 sm:p-4 border-b border-gray-200 border-t-0 text-left">
-                      <div className="flex items-center gap-1">
-                        <div className="text-gray-500 text-xs font-semibold font-inter uppercase leading-none">INNEHÅLL</div>
-                        <img src="/chevron-sort.svg" className="w-3 h-3 text-gray-400 hidden sm:block" alt="Sort" />
-                      </div>
-                    </th>
-                    <th className="p-2 sm:p-4 border-b border-gray-200 border-t-0 text-left">
-                      <div className="flex items-center gap-1">
-                        <div className="text-gray-500 text-xs font-semibold font-inter uppercase leading-none">VOLYM (L)</div>
-                        <img src="/chevron-sort.svg" className="w-3 h-3 text-gray-400 hidden sm:block" alt="Sort" />
-                      </div>
+                      <div className="text-gray-500 text-xs font-semibold font-inter uppercase leading-none">NIVÅ</div>
                     </th>
                     <th className="p-2 sm:p-4 border-b border-gray-200 border-t-0 text-center">
                       <div className="text-gray-500 text-xs font-semibold font-inter uppercase leading-none"></div>
@@ -353,20 +452,43 @@ export default function MinaCisterner() {
                         <div className="text-gray-900 text-sm font-medium font-inter leading-tight">{tank.id}</div>
                       </td>
                       <td className="p-2 sm:p-4">
-                        <div className="text-gray-900 text-sm font-medium font-inter leading-tight">{tank.namn}</div>
+                        <div className="text-gray-900 text-sm font-medium font-inter leading-tight">{tank.namn || 'N/A'}</div>
+                      </td>
+                      <td className="p-2 sm:p-4">
+                        <div className="text-gray-900 text-sm font-medium font-inter leading-tight">{tank.status || 'N/A'}</div>
+                      </td>
+                      <td className="p-2 sm:p-4">
+                        <div className="text-gray-900 text-sm font-medium font-inter leading-tight">{tank.produkt || 'N/A'}</div>
+                      </td>
+                      <td className="p-2 sm:p-4">
+                        <div className="text-gray-900 text-sm font-medium font-inter leading-tight">5000</div>
                       </td>
                       <td className="p-2 sm:p-4">
                         <div>
-                          <span className="text-gray-900 text-sm font-medium font-inter leading-tight">{tank.senastUppdaterad.split(' | ')[0]} </span>
-                          <span className="text-gray-400 text-sm font-medium font-inter leading-tight hidden sm:inline">|</span>
-                          <span className="text-gray-900 text-sm font-medium font-inter leading-tight block sm:inline"> {tank.senastUppdaterad.split(' | ')[1]}</span>
+                          <span className="text-gray-900 text-sm font-medium font-inter leading-tight">{(tank.senastUppdaterad || '').split(' | ')[0]} </span>
+                          <span className="text-gray-900 text-sm font-medium font-inter leading-tight block sm:inline"> {(tank.senastUppdaterad || '').split(' | ')[1]}</span>
                         </div>
                       </td>
                       <td className="p-2 sm:p-4">
-                        <div className="text-gray-900 text-sm font-medium font-inter leading-tight">{tank.innehall}</div>
-                      </td>
-                      <td className="p-2 sm:p-4">
-                        <div className="text-gray-900 text-sm font-medium font-inter leading-tight">{tank.volym}</div>
+                        {(() => {
+                          const progressData = getProgressData(tank);
+                          const progressWidth = progressData.progress === 80 ? 'w-12' : 
+                                               progressData.progress === 30 ? 'w-6' : 'w-2.5';
+                          const remainingWidth = progressData.progress === 80 ? 'w-5' : 
+                                                progressData.progress === 30 ? 'w-11' : 'w-14';
+                          
+                          return (
+                            <div className="inline-flex justify-start items-center gap-2">
+                              <div className="w-16 h-2.5 flex justify-start items-center">
+                                <div className={`${progressWidth} self-stretch ${progressData.bgColor} rounded-tl-lg rounded-bl-lg`} />
+                                <div className={`${remainingWidth} self-stretch bg-gray-100 rounded-tr-lg rounded-br-lg`} />
+                              </div>
+                              <div className={`w-11 text-center justify-start ${progressData.textColor} text-xs font-medium font-['Inter'] leading-none`}>
+                                {progressData.progress} %
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td 
                         className="p-1 sm:p-2 cursor-pointer hover:bg-gray-200"
@@ -512,7 +634,6 @@ export default function MinaCisterner() {
           </div>
         </div>
       </div>
-      </Layout>
-    </AuthGuard>
+    </Layout>
   );
 }

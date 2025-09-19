@@ -1,9 +1,7 @@
 'use client';
 
 import Layout from '../../../components/Layout';
-import AuthGuard from '../../../components/AuthGuard';
 import { useParams } from 'next/navigation';
-import { getTankById } from '../../../utils/tankStorage';
 import { useState, useEffect, Suspense } from 'react';
 
 function TankDetailsContent() {
@@ -33,12 +31,18 @@ function TankDetailsContent() {
   const [uploadingImages, setUploadingImages] = useState(false);
 
   useEffect(() => {
-    if (tankId) {
-      const tank = getTankById(tankId);
-      if (tank) {
-        setTankData(tank);
-        setEditData(tank);
-      } else {
+    if (tankId && typeof window !== 'undefined') {
+      try {
+        const tanks = JSON.parse(localStorage.getItem('tankData') || '[]');
+        const tank = tanks.find(t => t.id === tankId);
+        if (tank) {
+          setTankData(tank);
+          setEditData(tank);
+        } else {
+          setTankData(null);
+        }
+      } catch (error) {
+        console.error('Error loading tank:', error);
         setTankData(null);
       }
     } else {
@@ -112,41 +116,36 @@ function TankDetailsContent() {
 
   if (!tankId) {
     return (
-      <AuthGuard>
-        <Layout>
-          <div className="">
-            <div className="mx-auto">
-              <div className="text-center">
-                <h1 className="text-2xl font-semibold text-gray-900">Ingen ID angiven</h1>
-                <p className="text-gray-600 mt-2">URL:en måste innehålla ett ID (t.ex. /cisterner/123).</p>
-              </div>
+      <Layout>
+        <div className="">
+          <div className="mx-auto">
+            <div className="text-center">
+              <h1 className="text-2xl font-semibold text-gray-900">Ingen ID angiven</h1>
+              <p className="text-gray-600 mt-2">URL:en måste innehålla ett ID (t.ex. /cisterner/123).</p>
             </div>
           </div>
-        </Layout>
-      </AuthGuard>
+        </div>
+      </Layout>
     );
   }
 
   if (!tankData) {
     return (
-      <AuthGuard>
-        <Layout>
-          <div className="">
-            <div className="mx-auto">
-              <div className="text-center">
-                <h1 className="text-2xl font-semibold text-gray-900">Cistern hittades inte</h1>
-                <p className="text-gray-600 mt-2">Cisternen med ID {tankId} kunde inte hittas i localStorage.</p>
-              </div>
+      <Layout>
+        <div className="">
+          <div className="mx-auto">
+            <div className="text-center">
+              <h1 className="text-2xl font-semibold text-gray-900">Cistern hittades inte</h1>
+              <p className="text-gray-600 mt-2">Cisternen med ID {tankId} kunde inte hittas i localStorage.</p>
             </div>
           </div>
-        </Layout>
-      </AuthGuard>
+        </div>
+      </Layout>
     );
   }
 
   return (
-    <AuthGuard>
-      <Layout>
+    <Layout>
       <div className="">
         <div className="mx-auto">
           {/* Breadcrumbs */}
@@ -276,7 +275,7 @@ function TankDetailsContent() {
             <div className="bg-white rounded-lg shadow-[0px_1px_2px_-1px_rgba(0,0,0,0.10)] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.10)] overflow-hidden">
               <div className="p-4">
                 <h3 className="font-medium text-gray-500 mb-1 text-sm sm:text-base">Fyllnadsvolym</h3>
-                <p className="font-semibold text-gray-900 text-lg sm:text-xl">{tankData.fyllnadsvolym} liter</p>
+                <p className="font-semibold text-gray-900 text-lg sm:text-xl">4000 liter</p>
                 <p className="text-gray-500 text-sm sm:text-base">{tankData.volym} liter total volym</p>
               </div>
             </div>
@@ -508,7 +507,7 @@ function TankDetailsContent() {
                     <label className="block font-medium text-gray-900 mb-1 text-sm sm:text-base">Fyllnadsvolym (liter)</label>
                     <input 
                       type="text" 
-                      value={editData.fyllnadsvolym || ''} 
+                      value="4000" 
                       readOnly
                       className="w-full px-3 py-2.5 sm:px-4 sm:py-3 bg-gray-50 rounded-lg outline outline-1 outline-offset-[-1px] outline-gray-300 text-gray-900 text-sm sm:text-base"
                     />
@@ -652,25 +651,22 @@ function TankDetailsContent() {
         </div>
       </div>
       </Layout>
-    </AuthGuard>
   );
 }
 
 export default function TankDetails() {
   return (
     <Suspense fallback={
-      <AuthGuard>
-        <Layout>
-          <div className="">
-            <div className="mx-auto">
-              <div className="text-center">
-                <h1 className="text-2xl font-semibold text-gray-900">Laddar...</h1>
-                <p className="text-gray-600 mt-2">Hämtar cistern information...</p>
-              </div>
+      <Layout>
+        <div className="">
+          <div className="mx-auto">
+            <div className="text-center">
+              <h1 className="text-2xl font-semibold text-gray-900">Laddar...</h1>
+              <p className="text-gray-600 mt-2">Hämtar cistern information...</p>
             </div>
           </div>
-        </Layout>
-      </AuthGuard>
+        </div>
+      </Layout>
     }>
       <TankDetailsContent />
     </Suspense>

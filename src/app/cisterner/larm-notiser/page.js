@@ -1,10 +1,8 @@
 import Layout from '../../../components/Layout';
-import AuthGuard from '../../../components/AuthGuard';
 
 export default function LarmNotiser() {
   return (
-    <AuthGuard>
-      <Layout>
+    <Layout>
       <div className="">
         <div className="mx-auto">
           <div className="mb-8">
@@ -13,8 +11,7 @@ export default function LarmNotiser() {
           </div>
         </div>
       </div>
-      </Layout>
-    </AuthGuard>
+    </Layout>
   );
 }
 

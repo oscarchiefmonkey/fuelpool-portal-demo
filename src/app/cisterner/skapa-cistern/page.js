@@ -1,31 +1,36 @@
 'use client';
 
 import Layout from '../../../components/Layout';
-import AuthGuard from '../../../components/AuthGuard';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { saveTank } from '../../../utils/tankStorage';
 
 export default function SkapaCistern() {
   const [formData, setFormData] = useState({
-    totalVolym: '',
-    tillverkare: '',
+    namn: '',
+    volym: '',
     produkt: 'Diesel',
-    registreringsdatum: '2019-05-22',
-    modell: 'X2921-221911',
-    serienummer: 'CI3939494-2223-111-2',
-    detalj5: '',
+    registreringsdatum: '',
+    modell: '',
+    serienummer: '',
     senasteBesiktning: '',
-    detalj4: '',
-    detalj6: '2019-05-22',
-    kommentar: ''
+    kommentar: '',
+    status: 'Online',
+    tillverkare: '',
+    agare: '',
+    senasteService: ''
   });
   
   const [uploadedImages, setUploadedImages] = useState([]);
   const [uploadedDocuments, setUploadedDocuments] = useState([]);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [uploadingDocuments, setUploadingDocuments] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const router = useRouter();
+
+  // Fix hydration issues by ensuring we're on the client
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -106,22 +111,32 @@ export default function SkapaCistern() {
     // Create new tank object with all form data
     const newTank = {
       id: newId,
-      ...formData
+      ...formData,
+      totalVolym: formData.volym, // Samma som volym
+      senastUppdaterad: new Date().toLocaleString('sv-SE', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).replace(',', ' |')
     };
 
-    // Save to localStorage
-    const success = saveTank(newTank);
-    
-    if (success) {
-    router.push('/cisterner/mina-cisterner');
-    } else {
-      console.error('Failed to save tank');
+    // Save to localStorage directly (only on client)
+    if (typeof window !== 'undefined') {
+      try {
+        const existingTanks = JSON.parse(localStorage.getItem('tankData') || '[]');
+        const updatedTanks = [...existingTanks, newTank];
+        localStorage.setItem('tankData', JSON.stringify(updatedTanks));
+        router.push('/cisterner/mina-cisterner');
+      } catch (error) {
+        console.error('Error saving tank:', error);
+      }
     }
   };
 
   return (
-    <AuthGuard>
-      <Layout>
+    <Layout>
       <div className="">
         <div className="">
           {/* Breadcrumbs */}
@@ -249,12 +264,12 @@ export default function SkapaCistern() {
                   />
                 </div>
                 <div>
-                  <label className="block font-medium text-gray-900 mb-1 text-sm sm:text-base">Detalj 5</label>
+                  <label className="block font-medium text-gray-900 mb-1 text-sm sm:text-base">Namn*</label>
                   <input 
-                    name="detalj5"
-                    value={formData.detalj5}
+                    name="namn"
+                    value={formData.namn}
                     onChange={handleInputChange}
-                    placeholder="CI3939494-2223-111-2"
+                    placeholder="Ange cistern namn"
                     className="w-full px-3 py-2.5 sm:px-4 sm:py-3 bg-gray-50 rounded-lg outline outline-1 outline-offset-[-1px] outline-gray-300 text-gray-900 placeholder-gray-500 focus:outline-blue-500 focus:bg-white text-sm sm:text-base"
                   />
                 </div>
@@ -408,7 +423,6 @@ export default function SkapaCistern() {
         </div>
         </div>
       </div>
-      </Layout>
-    </AuthGuard>
+    </Layout>
   );
 }

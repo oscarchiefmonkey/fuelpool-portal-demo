@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 
-const TopNavbar = ({ onToggle }) => {
+const TopNavbar = ({ onToggle, isMenuOpen }) => {
   return (
     <div className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6 min-h-[64px]">
       <div className="inline-flex justify-start items-center gap-5">
@@ -20,39 +20,39 @@ const TopNavbar = ({ onToggle }) => {
         
         <button
           onClick={onToggle}
-          className="w-5 h-5 relative hidden sm:block"
+          className="w-5 h-5 relative hidden sm:block transition-transform duration-200 hover:scale-110"
         >
-          <img src="/bars.svg" className="w-5 h-5" alt="Menu" />
+          <img 
+            src={isMenuOpen ? "/x-outline.svg" : "/bars.svg"} 
+            className="w-5 h-5 transition-all duration-200" 
+            alt={isMenuOpen ? "Close Menu" : "Open Menu"} 
+          />
         </button>
       </div>
       
       <button
         onClick={onToggle}
-        className="w-5 h-5 relative sm:hidden"
+        className="w-5 h-5 relative sm:hidden transition-transform duration-200 hover:scale-110"
       >
-        <img src="/bars.svg" className="w-5 h-5" alt="Menu" />
+        <img 
+          src={isMenuOpen ? "/x-outline.svg" : "/bars.svg"} 
+          className="w-5 h-5 transition-all duration-200" 
+          alt={isMenuOpen ? "Close Menu" : "Open Menu"} 
+        />
       </button>
     </div>
   );
 };
 
 const Sidebar = ({ isVisible, shouldAnimate }) => {
-  const [cisternerExpanded, setCisternerExpanded] = useState(() => {
-    // Initialize dropdown state from localStorage or default to false
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('cisternerExpanded') === 'true';
-    }
-    return false;
-  });
   const router = useRouter();
   const pathname = usePathname();
+  const [cisternerExpanded, setCisternerExpanded] = useState(false);
 
+  // Öppna dropdown automatiskt om man är på en cistern-sida
   useEffect(() => {
-    // Save dropdown state to localStorage whenever it changes
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('cisternerExpanded', cisternerExpanded.toString());
-    }
-  }, [cisternerExpanded]);
+    setCisternerExpanded(pathname.startsWith('/cisterner/'));
+  }, [pathname]);
 
 
   if (!isVisible) return null;
@@ -170,21 +170,15 @@ const Sidebar = ({ isVisible, shouldAnimate }) => {
 };
 
 export default function Layout({ children }) {
-  const [sidebarState, setSidebarState] = useState(() => {
-    // Initialize state from localStorage or default to 'expanded'
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('sidebarState') || 'expanded';
-    }
-    return 'expanded';
-  });
+  const [sidebarState, setSidebarState] = useState('hidden');
   const [shouldAnimate, setShouldAnimate] = useState(false);
+  const pathname = usePathname();
 
+  // Stäng sidebaren när man navigerar
   useEffect(() => {
-    // Save state to localStorage whenever it changes
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('sidebarState', sidebarState);
-    }
-  }, [sidebarState]);
+    setSidebarState('hidden');
+    setShouldAnimate(false);
+  }, [pathname]);
 
   useEffect(() => {
     // Reset animation flag after animation completes
@@ -212,7 +206,7 @@ export default function Layout({ children }) {
   return (
     <div className="layout-container flex h-screen bg-white overflow-hidden">
       <div className="flex flex-col h-full w-full">
-        <TopNavbar onToggle={toggleSidebar} />
+        <TopNavbar onToggle={toggleSidebar} isMenuOpen={isVisible} />
         <div className="flex flex-1 overflow-hidden relative">
           <Sidebar 
             isVisible={isVisible}

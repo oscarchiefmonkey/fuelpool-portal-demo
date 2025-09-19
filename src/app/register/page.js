@@ -40,25 +40,27 @@ export default function Register() {
       return;
     }
 
-    // Kontrollera om användaren redan finns
-    const existingUsers = JSON.parse(localStorage.getItem('fuelpoolUsers') || '[]');
-    const userExists = existingUsers.find(user => user.email === formData.email);
-    
-    if (userExists) {
-      setError('En användare med denna e-postadress finns redan');
-      return;
+    // Kontrollera om användaren redan finns (only on client)
+    if (typeof window !== 'undefined') {
+      const existingUsers = JSON.parse(localStorage.getItem('fuelpoolUsers') || '[]');
+      const userExists = existingUsers.find(user => user.email === formData.email);
+      
+      if (userExists) {
+        setError('En användare med denna e-postadress finns redan');
+        return;
+      }
+
+      // Skapa ny användare
+      const newUser = {
+        id: Date.now().toString(),
+        ...formData,
+        createdAt: new Date().toISOString()
+      };
+
+      // Spara i localStorage
+      existingUsers.push(newUser);
+      localStorage.setItem('fuelpoolUsers', JSON.stringify(existingUsers));
     }
-
-    // Skapa ny användare
-    const newUser = {
-      id: Date.now().toString(),
-      ...formData,
-      createdAt: new Date().toISOString()
-    };
-
-    // Spara i localStorage
-    existingUsers.push(newUser);
-    localStorage.setItem('fuelpoolUsers', JSON.stringify(existingUsers));
 
     // Omdirigera till login
     router.push('/login');

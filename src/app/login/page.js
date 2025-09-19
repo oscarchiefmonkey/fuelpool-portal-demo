@@ -31,17 +31,25 @@ export default function Login() {
       return;
     }
 
-    // Hämta användare från localStorage
-    const users = JSON.parse(localStorage.getItem('fuelpoolUsers') || '[]');
-    const user = users.find(u => u.email === formData.email && u.password === formData.password);
+    // Hämta användare från localStorage (only on client)
+    if (typeof window !== 'undefined') {
+      // Hårdkodad admin-användare för utveckling
+      if (formData.email === 'admin@fuelpool.se' && formData.password === 'admin') {
+        router.push('/cisterner/skapa-cistern');
+        return;
+      }
 
-    if (!user) {
-      setError('Felaktig e-postadress eller lösenord');
-      return;
+      const users = JSON.parse(localStorage.getItem('fuelpoolUsers') || '[]');
+      const user = users.find(u => u.email === formData.email && u.password === formData.password);
+
+      if (!user) {
+        setError('Felaktig e-postadress eller lösenord');
+        return;
+      }
+
+      // Omdirigera till skapa cistern
+      router.push('/cisterner/skapa-cistern');
     }
-
-    // Omdirigera till dashboard
-    router.push('/dashboard');
   };
   return (
     <div className="login-background w-full min-h-screen inline-flex flex-col justify-start items-center overflow-y-auto">
